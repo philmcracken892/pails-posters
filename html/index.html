@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rex Notes</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap');
+
+        :root {
+            --primary-bg: #2a2a2a;
+            --header-bg-start: #1a1a1a;
+            --header-bg-end: #2a2a2a;
+            --text-color: #e0e0e0;
+            --border-color: #ffffff;
+            --button-bg-hover: #ffffff;
+            --button-text-hover: #1a1a1a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cinzel', serif;
+            background: transparent;
+            color: var(--text-color);
+            overflow: hidden;
+            display: none;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        body.show-ui {
+            display: flex;
+            background: rgba(0, 0, 0, 0.85);
+        }
+
+        .note-container {
+            background: var(--primary-bg);
+            border: 3px solid var(--border-color);
+            border-radius: 0;
+            max-width: 90vw;
+            max-height: 90vh;
+            width: 100%;
+            max-width: 600px;
+            display: none;
+            overflow: hidden;
+            position: relative;
+            margin: 10px;
+        }
+
+        /* Decorative corners */
+        .note-container::before,
+        .note-container::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            z-index: 10;
+        }
+
+        .note-container::before {
+            top: 8px;
+            left: 8px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .note-container::after {
+            top: 8px;
+            right: 8px;
+            border-left: none;
+            border-bottom: none;
+        }
+
+        .corner-bottom-left,
+        .corner-bottom-right {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            z-index: 10;
+        }
+
+        .corner-bottom-left {
+            bottom: 8px;
+            left: 8px;
+            border-right: none;
+            border-top: none;
+        }
+
+        .corner-bottom-right {
+            bottom: 8px;
+            right: 8px;
+            border-left: none;
+            border-top: none;
+        }
+
+        .note-header {
+            background: linear-gradient(135deg, var(--header-bg-start) 0%, var(--header-bg-end) 100%);
+            padding: 15px 20px;
+            border-bottom: 2px solid var(--border-color);
+            position: relative;
+            text-align: center;
+        }
+
+        .note-title {
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            font-weight: 700;
+            color: var(--border-color);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: 2px solid var(--border-color);
+            color: var(--border-color);
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            cursor: pointer;
+            padding: 5px 10px;
+            transition: all 0.3s ease;
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+        }
+
+        .close-btn:hover {
+            background: var(--button-bg-hover);
+            color: var(--button-text-hover);
+        }
+
+        .note-content {
+            padding: 15px 20px;
+            max-height: 65vh;
+            overflow-y: auto;
+            background: var(--header-bg-start);
+        }
+
+        .note-text {
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            line-height: 1.7;
+            color: var(--text-color);
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Cinzel', serif;
+        }
+
+        .note-image {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid var(--border-color);
+            margin: 15px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            position: relative;
+        }
+
+        .note-image:hover {
+            border-color: var(--text-color);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            transform: scale(1.02);
+        }
+
+        .image-container {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .expand-hint {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: var(--border-color);
+            padding: 5px 10px;
+            border: 1px solid var(--border-color);
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 5;
+            font-family: 'Cinzel', serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .image-container:hover .expand-hint {
+            opacity: 1;
+        }
+
+        .image-error {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--border-color);
+            padding: 15px;
+            text-align: center;
+            color: var(--border-color);
+            margin: 15px 0;
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+        }
+
+        .loading {
+            text-align: center;
+            color: var(--border-color);
+            padding: 15px;
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            position: relative;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--border-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: translateY(-50%) rotate(360deg); }
+        }
+
+        .note-actions {
+            padding: 15px 20px;
+            border-top: 2px solid var(--border-color);
+            background: var(--primary-bg);
+            display: flex;
+            justify-content: center;
+        }
+
+        .action-btn {
+            background: transparent;
+            color: var(--border-color);
+            border: 2px solid var(--border-color);
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            background: var(--button-bg-hover);
+            color: var(--button-text-hover);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .fullscreen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .fullscreen-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .fullscreen-image {
+            max-width: 90vw;
+            max-height: 90vh;
+            border: 3px solid var(--border-color);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            object-fit: contain;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .fullscreen-overlay.active .fullscreen-image {
+            transform: scale(1);
+        }
+
+        .fullscreen-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: var(--border-color);
+            border: 2px solid var(--border-color);
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            z-index: 1001;
+        }
+
+        .fullscreen-close:hover {
+            background: var(--button-bg-hover);
+            color: var(--button-text-hover);
+        }
+
+        .fullscreen-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: var(--border-color);
+            padding: 10px 20px;
+            border: 1px solid var(--border-color);
+            font-family: 'Cinzel', serif;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+
+        .note-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .note-content::-webkit-scrollbar-track {
+            background: var(--primary-bg);
+        }
+
+        .note-content::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border: 1px solid var(--primary-bg);
+        }
+
+        .note-content::-webkit-scrollbar-thumb:hover {
+            background: var(--text-color);
+        }
+
+        .decorative-line {
+            height: 2px;
+            background: linear-gradient(90deg, transparent 0%, var(--border-color) 50%, transparent 100%);
+            margin: 10px 0;
+        }
+
+        @media screen and (max-width: 480px) {
+            .note-container {
+                max-width: 95vw;
+                margin: 5px;
+            }
+
+            .note-header {
+                padding: 10px 15px;
+            }
+
+            .note-content {
+                padding: 10px 15px;
+            }
+
+            .note-actions {
+                padding: 10px 15px;
+            }
+
+            .close-btn {
+                top: 8px;
+                right: 10px;
+                padding: 3px 8px;
+            }
+
+            .fullscreen-close {
+                top: 10px;
+                right: 10px;
+                padding: 8px 12px;
+                font-size: 1rem;
+            }
+
+            .fullscreen-hint {
+                bottom: 10px;
+                padding: 8px 15px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="noteContainer" class="note-container">
+        <div class="corner-bottom-left"></div>
+        <div class="corner-bottom-right"></div>
+        
+        <div class="note-header">
+            <h1 id="noteTitle" class="note-title">Note Title</h1>
+            <button class="close-btn" onclick="closeNote()">✕</button>
+        </div>
+        
+        <div class="note-content">
+            <div id="noteText" class="note-text"></div>
+            <div class="decorative-line"></div>
+            <div id="noteImageContainer"></div>
+        </div>
+        
+        <div class="note-actions">
+            <button class="action-btn" onclick="closeNote()">Close</button>
+        </div>
+    </div>
+
+    <div id="fullscreenOverlay" class="fullscreen-overlay" onclick="closeFullscreen()">
+        <button class="fullscreen-close" onclick="closeFullscreen()">✕</button>
+        <img id="fullscreenImage" class="fullscreen-image" src="" alt="Fullscreen Image">
+        <div class="fullscreen-hint">Click anywhere or press ESC to close</div>
+    </div>
+
+    <script>
+        let currentImageUrl = '';
+
+        // Listen for messages from FiveM
+        window.addEventListener('message', function(event) {
+            const data = event.data;
+            
+            if (data.action === 'showNote') {
+                showNote(data.title, data.content, data.imageUrl);
+            } else if (data.action === 'hideNote') {
+                closeNote();
+            } else if (data.action === 'copyToClipboard') {
+                copyToClipboard(data.text);
+            }
+        });
+
+        function rgbToHex(r, g, b) {
+            return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+        }
+
+        function showNote(title, content, imageUrl) {
+            document.getElementById('noteTitle').textContent = title || 'Untitled Note';
+            document.getElementById('noteText').textContent = content || 'No content available.';
+            
+            const imageContainer = document.getElementById('noteImageContainer');
+            imageContainer.innerHTML = '';
+            
+            if (imageUrl && imageUrl.trim() !== '') {
+                currentImageUrl = imageUrl;
+                
+                // Create image container with expand hint
+                const imgContainer = document.createElement('div');
+                imgContainer.className = 'image-container';
+                
+                const img = document.createElement('img');
+                img.className = 'note-image';
+                img.src = imageUrl;
+                img.alt = 'Note Image';
+                img.crossOrigin = 'Anonymous'; // Allow color extraction from cross-origin images
+                
+                const expandHint = document.createElement('div');
+                expandHint.className = 'expand-hint';
+                expandHint.textContent = 'Click to Expand';
+                
+                img.onload = function() {
+                    const loadingDivs = imageContainer.querySelectorAll('.loading');
+                    loadingDivs.forEach(div => div.remove());
+                    
+                    imgContainer.appendChild(img);
+                    imgContainer.appendChild(expandHint);
+                    imageContainer.appendChild(imgContainer);
+                    
+                    // Extract colors using ColorThief
+                    const colorThief = new ColorThief();
+                    try {
+                        const palette = colorThief.getPalette(img, 3); // Get 3 dominant colors
+                        const [primaryColor, secondaryColor, textColor] = palette;
+                        
+                        // Update CSS variables
+                        document.documentElement.style.setProperty('--primary-bg', rgbToHex(...primaryColor));
+                        document.documentElement.style.setProperty('--header-bg-start', rgbToHex(...primaryColor));
+                        document.documentElement.style.setProperty('--header-bg-end', rgbToHex(...secondaryColor));
+                        document.documentElement.style.setProperty('--text-color', rgbToHex(...textColor));
+                        document.documentElement.style.setProperty('--border-color', rgbToHex(...textColor));
+                        document.documentElement.style.setProperty('--button-bg-hover', rgbToHex(...textColor));
+                        document.documentElement.style.setProperty('--button-text-hover', rgbToHex(...primaryColor));
+                    } catch (e) {
+                        console.error('Color extraction failed:', e);
+                    }
+                    
+                    // Add click handler for expansion
+                    imgContainer.onclick = function(e) {
+                        e.preventDefault();
+                        showFullscreenImage(imageUrl);
+                    };
+                };
+                
+                img.onerror = function() {
+                    const loadingDivs = imageContainer.querySelectorAll('.loading');
+                    loadingDivs.forEach(div => div.remove());
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'image-error';
+                    errorDiv.innerHTML = '⚠ IMAGE COULD NOT BE LOADED<br><small>' + imageUrl + '</small>';
+                    imageContainer.appendChild(errorDiv);
+                };
+                
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'loading';
+                loadingDiv.textContent = 'Loading Image';
+                imageContainer.appendChild(loadingDiv);
+                
+                setTimeout(() => {
+                    if (imageContainer.contains(loadingDiv)) {
+                        imageContainer.removeChild(loadingDiv);
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'image-error';
+                        errorDiv.innerHTML = '⚠ IMAGE LOADING TIMED OUT<br><small>' + imageUrl + '</small>';
+                        imageContainer.appendChild(errorDiv);
+                    }
+                }, 10000);
+            } else {
+                // Reset to default colors if no image
+                document.documentElement.style.setProperty('--primary-bg', '#2a2a2a');
+                document.documentElement.style.setProperty('--header-bg-start', '#1a1a1a');
+                document.documentElement.style.setProperty('--header-bg-end', '#2a2a2a');
+                document.documentElement.style.setProperty('--text-color', '#e0e0e0');
+                document.documentElement.style.setProperty('--border-color', '#ffffff');
+                document.documentElement.style.setProperty('--button-bg-hover', '#ffffff');
+                document.documentElement.style.setProperty('--button-text-hover', '#1a1a1a');
+            }
+            
+            document.body.classList.add('show-ui');
+            document.getElementById('noteContainer').style.display = 'block';
+        }
+
+        function closeNote() {
+            document.getElementById('noteContainer').style.display = 'none';
+            document.body.classList.remove('show-ui');
+            currentImageUrl = '';
+            // Reset to default colors
+            document.documentElement.style.setProperty('--primary-bg', '#2a2a2a');
+            document.documentElement.style.setProperty('--header-bg-start', '#1a1a1a');
+            document.documentElement.style.setProperty('--header-bg-end', '#2a2a2a');
+            document.documentElement.style.setProperty('--text-color', '#e0e0e0');
+            document.documentElement.style.setProperty('--border-color', '#ffffff');
+            document.documentElement.style.setProperty('--button-bg-hover', '#ffffff');
+            document.documentElement.style.setProperty('--button-text-hover', '#1a1a1a');
+            fetch('https://rex-notes/closeNote', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            }).catch(() => {});
+        }
+
+        function showFullscreenImage(imageUrl) {
+            const overlay = document.getElementById('fullscreenOverlay');
+            const image = document.getElementById('fullscreenImage');
+            
+            image.src = imageUrl;
+            overlay.classList.add('active');
+            
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFullscreen() {
+            const overlay = document.getElementById('fullscreenOverlay');
+            overlay.classList.remove('active');
+            
+            document.body.style.overflow = '';
+        }
+
+        function copyToClipboard(text) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function() {
+                    console.log('Text copied to clipboard');
+                }).catch(function(err) {
+                    console.log('Failed to copy text: ', err);
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                console.log('Text copied to clipboard (fallback)');
+            } catch (err) {
+                console.log('Failed to copy text (fallback): ', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                if (document.getElementById('fullscreenOverlay').classList.contains('active')) {
+                    closeFullscreen();
+                } else {
+                    closeNote();
+                }
+            }
+        });
+
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    </script>
+</body>
+</html>
