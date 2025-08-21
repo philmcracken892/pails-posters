@@ -13,8 +13,8 @@ Config.PromptRotateRight = 'Rotate Right'
 Config.PromptPitchUp = "Pitch Up "
 Config.PromptPitchDown = "Pitch Down"
 Config.PromptRollLeft = "Roll Left"
-Config.TextDisplayDistance = 4.0 
-Config.ShowNoteText = true 
+Config.TextDisplayDistance = 4.0
+Config.ShowNoteText = true
 ---------------------------------------------
 -- settings
 ---------------------------------------------

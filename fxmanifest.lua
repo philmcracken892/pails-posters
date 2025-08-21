@@ -2,16 +2,13 @@ fx_version 'cerulean'
 rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aware my resources *will* become incompatible once RedM ships.'
 game 'rdr3'
 
-description 'phils-posters
+description 'phils-posters'
 version '1.0.2'
-ui_page 'html /index.html'
+ui_page 'html/index.html'
 Author 'Phil and rex'
 
 shared_scripts {
     '@ox_lib/init.lua',
-    '@rsg-core/shared/locale.lua',
-    'locales/en.lua',
-    'locales/*.lua',
     'config.lua',
 }
 
@@ -30,15 +27,9 @@ dependencies {
     'ox_lib',
 }
 
-escrow_ignore {
-    'locales',
-    'config.lua',
-    'README.md',
-    'rex-notes.sql'
-}
-
 files {
-    'html/index.html'
+    'html/index.html',
+    'locales/*.json'
 }
 
 lua54 'yes'
