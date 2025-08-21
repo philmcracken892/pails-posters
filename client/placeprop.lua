@@ -109,7 +109,7 @@ function PitchDown()
     CreateThread(function()
         local str = Config.PromptPitchDown or "Pitch Down"
         PitchDownPrompt = PromptRegisterBegin()
-        PromptSetControlAction(PitchDownPrompt, 0x8CF8F910) -- Mouse Wheel Down
+        PromptSetControlAction(PitchDownPrompt, 0x05CA7C52) -- Arrow down
         str = CreateVarString(10, 'LITERAL_STRING', str)
         PromptSetText(PitchDownPrompt, str)
         PromptSetEnabled(PitchDownPrompt, true)
