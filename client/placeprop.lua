@@ -109,7 +109,7 @@ function PitchDown()
     CreateThread(function()
         local str = Config.PromptPitchDown or "Pitch Down"
         PitchDownPrompt = PromptRegisterBegin()
-        PromptSetControlAction(PitchDownPrompt, 0x05CA7C52) -- Arrow down
+        PromptSetControlAction(PitchDownPrompt, 0x05CA7C52) -- Arrow Down
         str = CreateVarString(10, 'LITERAL_STRING', str)
         PromptSetText(PitchDownPrompt, str)
         PromptSetEnabled(PitchDownPrompt, true)
@@ -323,7 +323,7 @@ function PropPlacer(proptype, prop)
             end
             if IsControlPressed(1, 0x6319DB71) then -- Arrow Up (PitchUp)
                 pitch = pitch + rotationSpeed
-            elseif IsControlPressed(1, 0x8CF8F910) then -- Mouse Wheel Down (PitchDown)
+            elseif IsControlPressed(1, 0x05CA7C52) then -- Arrow Down (PitchDown)
                 pitch = pitch - rotationSpeed
             end
             if IsControlPressed(1, 0xF1E9A8D7) then -- Q key (RollLeft)
