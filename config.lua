@@ -5,7 +5,7 @@ Config.PlayerProps = {}
 -- deploy prop settings
 ---------------------------------------------
 Config.ForwardDistance = 1.0
-Config.PromptGroupName = 'Place Note'
+Config.PromptGroupName = 'Place Poster'
 Config.PromptCancelName = 'Cancel'
 Config.PromptPlaceName = 'Place'
 Config.PromptRotateLeft = 'Rotate Left'
