@@ -8,7 +8,7 @@ local function versionCheckPrint(_type, log)
 end
 
 local function CheckVersion()
-    PerformHttpRequest('https://raw.githubusercontent.com/RexShack/rex-versioncheckers/main/rex-notes/version.txt', function(err, text, headers)
+    PerformHttpRequest('https://raw.githubusercontent.com/RexShack/rex-versioncheckers/main/phils-posters/version.txt', function(err, text, headers)
         local currentVersion = GetResourceMetadata(GetCurrentResourceName(), 'version')
 
         if not text then 

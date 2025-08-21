@@ -1,5 +1,8 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
+lib.locale()
+
 math.randomseed(GetGameTimer())
+
 local CancelPrompt
 local SetPrompt
 local RotateLeftPrompt
@@ -12,6 +15,7 @@ local confirmed
 local heading
 local pitch
 local roll
+
 local PromptPlacerGroup = GetRandomIntInRange(0, 0xffffff)
 
 -- Initialize prompts
@@ -105,7 +109,7 @@ function PitchDown()
     CreateThread(function()
         local str = Config.PromptPitchDown or "Pitch Down"
         PitchDownPrompt = PromptRegisterBegin()
-        PromptSetControlAction(PitchDownPrompt, 0x8CF8F910) -- Mouse Wheel Down
+        PromptSetControlAction(PitchDownPrompt, 0x05CA7C52) -- Arrow Down
         str = CreateVarString(10, 'LITERAL_STRING', str)
         PromptSetText(PitchDownPrompt, str)
         PromptSetEnabled(PitchDownPrompt, true)
@@ -164,9 +168,7 @@ function AlignPropToSurface(prop, surfaceNormal, coords, entity)
     local minDim, maxDim = GetModelDimensions(GetEntityModel(prop))
     local propHeight = math.abs(maxDim.z - minDim.z)
     local propDepth = math.max(math.abs(maxDim.x - minDim.x), math.abs(maxDim.y - minDim.y))
-    
     local propRotation = vector3(pitch, roll, heading)
-    
     if DoesEntityExist(entity) and entity ~= 0 then
         local entityType = GetEntityType(entity)
         if entityType == 2 or entityType == 3 then
@@ -174,27 +176,24 @@ function AlignPropToSurface(prop, surfaceNormal, coords, entity)
             surfaceNormal = up
         end
     end
-    
     local propThickness = 0.01
     local offsetDistance = propThickness
-    
     local offsetCoords = vector3(
         coords.x + (surfaceNormal.x * offsetDistance),
         coords.y + (surfaceNormal.y * offsetDistance),
         coords.z + (surfaceNormal.z * offsetDistance)
     )
-    
     SetEntityCoordsNoOffset(prop, offsetCoords.x, offsetCoords.y, offsetCoords.z, false, false, false, true)
     SetEntityRotation(prop, pitch, roll, heading, 2, false)
 end
 
 function GetSurfaceType(surfaceNormal)
     if surfaceNormal.z > 0.7 then
-        return "floor"
+        return locale('surface_floor')
     elseif surfaceNormal.z < -0.7 then
-        return "ceiling"
+        return locale('surface_ceiling')
     else
-        return "wall"
+        return locale('surface_wall')
     end
 end
 
@@ -206,14 +205,11 @@ function SnapPropToSurface(prop, coords, surfaceNormal, entity)
         propPos.y - (surfaceNormal.y * 1.5),
         propPos.z - (surfaceNormal.z * 1.5)
     )
-    
     local rayHandle = StartShapeTestRay(rayStart.x, rayStart.y, rayStart.z, rayEnd.x, rayEnd.y, rayEnd.z, 1 + 2 + 4 + 8 + 16, prop, 0)
     local _, hit, snapCoords, snapNormal, hitEntity = GetShapeTestResult(rayHandle)
-    
     if hit then
         local minDim, maxDim = GetModelDimensions(GetEntityModel(prop))
         local propThickness = 0.01
-        
         if DoesEntityExist(hitEntity) and hitEntity ~= 0 then
             local entityType = GetEntityType(hitEntity)
             if entityType == 2 or entityType == 3 then
@@ -221,7 +217,6 @@ function SnapPropToSurface(prop, coords, surfaceNormal, entity)
                 snapNormal = up
             end
         end
-        
         local finalCoords
         if math.abs(snapNormal.z) > 0.95 then
             if snapNormal.z > 0 then
@@ -236,11 +231,9 @@ function SnapPropToSurface(prop, coords, surfaceNormal, entity)
                 snapCoords.z + (snapNormal.z * propThickness)
             )
         end
-        
         SetEntityCoordsNoOffset(prop, finalCoords.x, finalCoords.y, finalCoords.z, false, false, false, true)
         return true
     end
-    
     return false
 end
 
@@ -283,86 +276,67 @@ function PropPlacer(proptype, prop)
     pitch = 0.0
     roll = 0.0
     confirmed = false
-
     RequestModel(PropHash)
     while not HasModelLoaded(PropHash) do
         Wait(0)
     end
-
     SetCurrentPedWeapon(cache.ped, -1569615261, true)
-
     local hit, coords, surfaceNormal, entity
-
     while not hit do
         hit, coords, surfaceNormal, entity = RayCastGamePlayCamera(1000.0)
         Wait(0)
     end
-
     local tempObj = CreateObject(PropHash, coords.x, coords.y, coords.z, true, false, true)
     EagleEyeSetCustomEntityTint(tempObj, 255, 255, 0) -- Apply yellow tint
-
     CreateThread(function()
         while not confirmed do
             hit, coords, surfaceNormal, entity = RayCastGamePlayCamera(1000.0)
-
             if hit then
                 AlignPropToSurface(tempObj, surfaceNormal, coords, entity)
                 SnapPropToSurface(tempObj, coords, surfaceNormal, entity)
-                
                 FreezeEntityPosition(tempObj, true)
                 SetEntityCollision(tempObj, false, false)
                 SetEntityAlpha(tempObj, 150, false)
-                
                 DrawPropAxes(tempObj)
                 DrawSurfaceNormal(coords, surfaceNormal)
-                
-                local rotationInfo = string.format("Yaw: %.1f° Pitch: %.1f° Roll: %.1f°", heading, pitch, roll)
+                local rotationInfo = locale('ui_rotation_info'):format(heading, pitch, roll)
                 SetTextScale(0.3, 0.3)
                 SetTextColor(255, 255, 255, 255)
                 SetTextCentre(true)
                 SetTextDropshadow(1, 0, 0, 0, 255)
                 DisplayText(CreateVarString(10, "LITERAL_STRING", rotationInfo), 0.5, 0.08)
-                
                 local surfaceType = GetSurfaceType(surfaceNormal)
                 SetTextScale(0.35, 0.35)
                 SetTextColor(255, 255, 255, 255)
                 SetTextCentre(true)
                 SetTextDropshadow(1, 0, 0, 0, 255)
-                DisplayText(CreateVarString(10, "LITERAL_STRING", "Surface: " .. surfaceType), 0.5, 0.05)
+                DisplayText(CreateVarString(10, "LITERAL_STRING", locale('ui_surface'):format(surfaceType)), 0.5, 0.05)
             end
-            
             Wait(0)
-
             local PropPlacerGroupName = CreateVarString(10, 'LITERAL_STRING', Config.PromptGroupName)
             PromptSetActiveGroupThisFrame(PromptPlacerGroup, PropPlacerGroupName)
-
             local rotationSpeed = 2.0
-            
             if IsControlPressed(1, 0xA65EBAB4) then -- Left arrow
                 heading = heading + rotationSpeed
             elseif IsControlPressed(1, 0xDEB34313) then -- Right arrow
                 heading = heading - rotationSpeed
             end
-            
             if IsControlPressed(1, 0x6319DB71) then -- Arrow Up (PitchUp)
                 pitch = pitch + rotationSpeed
-            elseif IsControlPressed(1, 0x8CF8F910) then -- Mouse Wheel Down (PitchDown)
+            elseif IsControlPressed(1, 0x05CA7C52) then -- Arrow Down (PitchDown)
                 pitch = pitch - rotationSpeed
             end
-            
             if IsControlPressed(1, 0xF1E9A8D7) then -- Q key (RollLeft)
                 roll = roll + rotationSpeed
             elseif IsControlPressed(1, 0xE764D794) then -- E key (RollRight)
                 roll = roll - rotationSpeed
             end
-
             if heading > 360.0 then heading = heading - 360.0 end
             if heading < 0.0 then heading = heading + 360.0 end
             if pitch > 360.0 then pitch = pitch - 360.0 end
             if pitch < 0.0 then pitch = pitch + 360.0 end
             if roll > 360.0 then roll = roll - 360.0 end
             if roll < 0.0 then roll = roll + 360.0 end
-
             if PromptHasHoldModeCompleted(SetPrompt) then
                 confirmed = true
                 SetEntityAlpha(tempObj, 255, false)
@@ -372,11 +346,10 @@ function PropPlacer(proptype, prop)
                 DeleteObject(tempObj)
                 SetModelAsNoLongerNeeded(PropHash)
                 FreezeEntityPosition(cache.ped, true)
-                TriggerEvent('rex-notes:client:setupnote', proptype, PropHash, finalCoords, finalRotation, {r = 255, g = 255, b = 0}) -- Pass tint
+                TriggerEvent('phils-posters:client:setupnote', proptype, PropHash, finalCoords, finalRotation, {r = 255, g = 255, b = 0}) -- Pass tint
                 FreezeEntityPosition(cache.ped, false)
                 break
             end
-
             if PromptHasHoldModeCompleted(CancelPrompt) then
                 DeleteObject(tempObj)
                 SetModelAsNoLongerNeeded(PropHash)
@@ -386,6 +359,6 @@ function PropPlacer(proptype, prop)
     end)
 end
 
-RegisterNetEvent('rex-notes:client:createnote', function(proptype, prop)
+RegisterNetEvent('phils-posters:client:createnote', function(proptype, prop)
     PropPlacer(proptype, prop)
 end)
